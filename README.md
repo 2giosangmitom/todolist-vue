@@ -1,45 +1,37 @@
-# todo-list
+# Todo App
 
-This template should help get you started developing with Vue 3 in Vite.
+A simple Todo App built with **Vue.js** and **IndexedDB** for local storage.
 
-## Recommended IDE Setup
+## Technologies Used
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- [Vue.js](https://vuejs.org/) – Frontend framework for building reactive UI.
+- IndexedDB – Client-side database for persistent storage.
 
-## Type Support for `.vue` Imports in TS
+## Installation
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+1. Clone the repository:
 
-## Customize configuration
+   ```sh
+   git clone https://github.com/2giosangmitom/todolist-vue.git
+   cd todolist-vue
+   ```
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+2. Install dependencies:
 
-## Project Setup
+   ```sh
+   npm install
+   ```
 
-```sh
-npm install
-```
+3. Run the development server:
 
-### Compile and Hot-Reload for Development
+   ```sh
+   npm run dev
+   ```
 
-```sh
-npm run dev
-```
+## Preview
 
-### Type-Check, Compile and Minify for Production
+![preview](./preview.png)
 
-```sh
-npm run build
-```
+## Contributing
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
-
-```sh
-npm run test:unit
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
-```
+Contributions are welcome! Feel free to fork the repo and submit pull requests.
