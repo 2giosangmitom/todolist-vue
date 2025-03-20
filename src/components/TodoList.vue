@@ -11,8 +11,33 @@ type Todo = {
 const dbOk = ref(false);
 const todoList: Ref<Todo[]> = ref([]);
 
+// Update the check state of a Todo
 const handleCheck = (item: Todo) => {
   item.checked = !item.checked;
+
+  const request = indexedDB.open('TodoList');
+
+  request.onsuccess = (event) => {
+    const db = (event.target as IDBOpenDBRequest).result;
+    const transaction = db.transaction('todos', 'readwrite');
+
+    const todoStore = transaction.objectStore('todos');
+
+    const update = todoStore.put({ ...item });
+
+    update.onsuccess = () => {
+      console.log('Todo item updated successfully');
+    };
+
+    update.onerror = () => {
+      console.error('Error updating todo item');
+    };
+  };
+};
+
+// Update the content of a todo
+const handleUpdate = (item: Todo, newTitle: string) => {
+  item.title = newTitle;
 
   const request = indexedDB.open('TodoList');
 
@@ -93,7 +118,12 @@ onBeforeMount(() => {
 
       <ul class="todo_list">
         <li v-for="item in todoList" :key="item.id">
-          <ListItem :is-checked="item.checked" @check="handleCheck(item)">{{ item.title }}</ListItem>
+          <ListItem
+            :is-checked="item.checked"
+            :title="item.title"
+            @check="handleCheck(item)"
+            @update="handleUpdate(item, $event)"
+          />
         </li>
       </ul>
     </div>

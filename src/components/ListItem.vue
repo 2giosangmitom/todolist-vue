@@ -1,28 +1,44 @@
 <script setup lang="ts">
-interface Props {
-  isChecked: boolean;
-}
-defineProps<Props>();
-
 import TrashIcon from './icons/TrashIcon.vue';
 import EditIcon from './icons/EditIcon.vue';
+import { ref } from 'vue';
+
+interface Props {
+  isChecked: boolean;
+  title: string;
+}
+const props = defineProps<Props>();
 
 const emit = defineEmits(['check', 'delete', 'update']);
 
-const handleCheck = () => {
-  emit('check');
+const newTitle = ref('');
+const isEditable = ref(false);
+
+const handleEdit = () => {
+  isEditable.value = true;
+  newTitle.value = props.title;
+};
+
+const handleUpdate = () => {
+  emit('update', newTitle.value);
+  isEditable.value = false;
 };
 </script>
 
 <template>
   <div class="list_item">
     <div :class="{ checked: isChecked }">
-      <input type="checkbox" class="checkbox" @change="handleCheck" :checked="isChecked" />
-      <slot />
+      <input type="checkbox" class="checkbox" @change="emit('check')" :checked="isChecked" />
+      <template v-if="isEditable">
+        <input type="text" v-model="newTitle" @blur="handleUpdate" @keyup.enter="handleUpdate" />
+      </template>
+      <template v-else>
+        {{ title }}
+      </template>
     </div>
 
     <div>
-      <EditIcon class="edit_icon" />
+      <EditIcon class="edit_icon" @click="handleEdit" />
       <TrashIcon class="trash_icon" />
     </div>
   </div>
