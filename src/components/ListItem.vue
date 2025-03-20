@@ -28,18 +28,18 @@ const handleUpdate = () => {
 <template>
   <div class="list_item">
     <div :class="{ checked: isChecked }">
-      <input type="checkbox" class="checkbox" @change="emit('check')" :checked="isChecked" />
       <template v-if="isEditable">
         <input type="text" v-model="newTitle" @blur="handleUpdate" @keyup.enter="handleUpdate" />
       </template>
       <template v-else>
+        <input type="checkbox" class="checkbox" @change="emit('check')" :checked="isChecked" />
         {{ title }}
       </template>
     </div>
 
     <div>
       <EditIcon class="edit_icon" @click="handleEdit" />
-      <TrashIcon class="trash_icon" />
+      <TrashIcon class="trash_icon" @click="emit('delete')" />
     </div>
   </div>
 </template>

@@ -10,6 +10,7 @@ type Todo = {
 
 const dbOk = ref(false);
 const todoList: Ref<Todo[]> = ref([]);
+const newTaskTitle = ref('');
 
 // Update the check state of a Todo
 const handleCheck = (item: Todo) => {
@@ -54,6 +55,64 @@ const handleUpdate = (item: Todo, newTitle: string) => {
     };
 
     update.onerror = () => {
+      console.error('Error updating todo item');
+    };
+  };
+};
+
+// Delete a task
+const handleDelete = (item: Todo) => {
+  const request = indexedDB.open('TodoList');
+
+  request.onsuccess = (event) => {
+    const db = (event.target as IDBOpenDBRequest).result;
+    const transaction = db.transaction('todos', 'readwrite');
+    const todoStore = transaction.objectStore('todos');
+
+    const deleteReq = todoStore.delete(item.id);
+
+    deleteReq.onsuccess = () => {
+      todoList.value = todoList.value.filter((v) => v.id !== item.id);
+      console.log('Todo item updated successfully');
+    };
+
+    deleteReq.onerror = () => {
+      console.error('Error updating todo item');
+    };
+  };
+};
+
+// Handle add new task
+const handleAddTask = () => {
+  const request = indexedDB.open('TodoList');
+
+  const genId = (): number => {
+    let max = 1;
+
+    todoList.value.forEach((item) => {
+      if (max < item.id) {
+        max = item.id;
+      }
+    });
+
+    return max + 1;
+  };
+
+  request.onsuccess = (event) => {
+    const db = (event.target as IDBOpenDBRequest).result;
+    const transaction = db.transaction('todos', 'readwrite');
+    const todoStore = transaction.objectStore('todos');
+
+    const newItem: Todo = { id: genId(), title: newTaskTitle.value, checked: false };
+    const addReq = todoStore.add(newItem);
+
+    addReq.onsuccess = () => {
+      todoList.value.push(newItem);
+      newTaskTitle.value = '';
+      console.log('Todo item updated successfully');
+    };
+
+    addReq.onerror = () => {
       console.error('Error updating todo item');
     };
   };
@@ -112,20 +171,26 @@ onBeforeMount(() => {
     <h2>Get Things Done!</h2>
     <div v-if="dbOk">
       <div class="add_task_input">
-        <input type="text" placeholder="What is the task today?" />
-        <button>Add Task</button>
+        <input type="text" placeholder="What is the task today?" v-model="newTaskTitle" @keyup.enter="handleAddTask" />
+        <button @click="handleAddTask">Add Task</button>
       </div>
 
-      <ul class="todo_list">
-        <li v-for="item in todoList" :key="item.id">
-          <ListItem
-            :is-checked="item.checked"
-            :title="item.title"
-            @check="handleCheck(item)"
-            @update="handleUpdate(item, $event)"
-          />
-        </li>
-      </ul>
+      <template v-if="todoList.length != 0">
+        <ul class="todo_list">
+          <li v-for="item in todoList" :key="item.id">
+            <ListItem
+              :is-checked="item.checked"
+              :title="item.title"
+              @check="handleCheck(item)"
+              @update="handleUpdate(item, $event)"
+              @delete="handleDelete(item)"
+            />
+          </li>
+        </ul>
+      </template>
+      <template v-else>
+        <p class="no_tasks_message">No tasks there! Yay!</p>
+      </template>
     </div>
     <div v-else class="error_message">
       <p>An error was occurred when opening the IndexedDB!</p>
@@ -190,5 +255,12 @@ onBeforeMount(() => {
   text-align: center;
   margin-top: 10px;
   font-size: 20px;
+}
+
+.no_tasks_message {
+  margin-top: 20px;
+  color: #98d2c0;
+  font-size: 1.5rem;
+  text-align: center;
 }
 </style>
