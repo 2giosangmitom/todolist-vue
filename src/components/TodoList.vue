@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onBeforeMount, ref, type Ref } from 'vue';
 import ListItem from './ListItem.vue';
+import { openDB } from '@/utils/indexedDB';
 
 type Todo = {
   id: number;
@@ -12,157 +13,124 @@ const dbOk = ref(false);
 const todoList: Ref<Todo[]> = ref([]);
 const newTaskTitle = ref('');
 
+const updateTodoInDB = async (item: Todo) => {
+  try {
+    const db = await openDB();
+    if (db) {
+      const transaction = db.transaction('todos', 'readwrite');
+      const todoStore = transaction.objectStore('todos');
+
+      await new Promise<void>((resolve, reject) => {
+        const updateReq = todoStore.put({ ...item });
+        updateReq.onsuccess = () => {
+          console.log('Todo item updated successfully');
+          resolve();
+        };
+        updateReq.onerror = () => {
+          console.error('Error updating todo item');
+          reject(updateReq.error);
+        };
+      });
+    }
+  } catch (error) {
+    console.error('Database error:', error);
+  }
+};
+
 // Update the check state of a Todo
-const handleCheck = (item: Todo) => {
+const handleCheck = async (item: Todo) => {
   item.checked = !item.checked;
-
-  const request = indexedDB.open('TodoList');
-
-  request.onsuccess = (event) => {
-    const db = (event.target as IDBOpenDBRequest).result;
-    const transaction = db.transaction('todos', 'readwrite');
-
-    const todoStore = transaction.objectStore('todos');
-
-    const update = todoStore.put({ ...item });
-
-    update.onsuccess = () => {
-      console.log('Todo item updated successfully');
-    };
-
-    update.onerror = () => {
-      console.error('Error updating todo item');
-    };
-  };
+  await updateTodoInDB(item);
 };
 
 // Update the content of a todo
-const handleUpdate = (item: Todo, newTitle: string) => {
+const handleUpdate = async (item: Todo, newTitle: string) => {
   item.title = newTitle;
-
-  const request = indexedDB.open('TodoList');
-
-  request.onsuccess = (event) => {
-    const db = (event.target as IDBOpenDBRequest).result;
-    const transaction = db.transaction('todos', 'readwrite');
-
-    const todoStore = transaction.objectStore('todos');
-
-    const update = todoStore.put({ ...item });
-
-    update.onsuccess = () => {
-      console.log('Todo item updated successfully');
-    };
-
-    update.onerror = () => {
-      console.error('Error updating todo item');
-    };
-  };
+  await updateTodoInDB(item);
 };
 
 // Delete a task
-const handleDelete = (item: Todo) => {
-  const request = indexedDB.open('TodoList');
+const handleDelete = async (item: Todo) => {
+  try {
+    const db = await openDB();
+    if (db) {
+      const transaction = db.transaction('todos', 'readwrite');
+      const todoStore = transaction.objectStore('todos');
 
-  request.onsuccess = (event) => {
-    const db = (event.target as IDBOpenDBRequest).result;
-    const transaction = db.transaction('todos', 'readwrite');
-    const todoStore = transaction.objectStore('todos');
-
-    const deleteReq = todoStore.delete(item.id);
-
-    deleteReq.onsuccess = () => {
-      todoList.value = todoList.value.filter((v) => v.id !== item.id);
-      console.log('Todo item updated successfully');
-    };
-
-    deleteReq.onerror = () => {
-      console.error('Error updating todo item');
-    };
-  };
+      await new Promise<void>((resolve, reject) => {
+        const deleteReq = todoStore.delete(item.id);
+        deleteReq.onsuccess = () => {
+          todoList.value = todoList.value.filter((v) => v.id !== item.id);
+          console.log('Todo item deleted successfully');
+          resolve();
+        };
+        deleteReq.onerror = () => {
+          console.error('Error deleting todo item');
+          reject(deleteReq.error);
+        };
+      });
+    }
+  } catch (error) {
+    console.error('Database error:', error);
+  }
 };
 
 // Handle add new task
-const handleAddTask = () => {
-  const request = indexedDB.open('TodoList');
+const handleAddTask = async () => {
+  try {
+    const db = await openDB();
+    if (db) {
+      const transaction = db.transaction('todos', 'readwrite');
+      const todoStore = transaction.objectStore('todos');
 
-  const genId = (): number => {
-    let max = 1;
+      const genId = (): number => {
+        let max = 1;
+        todoList.value.forEach((item) => {
+          if (max < item.id) {
+            max = item.id;
+          }
+        });
+        return max + 1;
+      };
 
-    todoList.value.forEach((item) => {
-      if (max < item.id) {
-        max = item.id;
-      }
-    });
+      const newItem: Todo = { id: genId(), title: newTaskTitle.value, checked: false };
 
-    return max + 1;
-  };
-
-  request.onsuccess = (event) => {
-    const db = (event.target as IDBOpenDBRequest).result;
-    const transaction = db.transaction('todos', 'readwrite');
-    const todoStore = transaction.objectStore('todos');
-
-    const newItem: Todo = { id: genId(), title: newTaskTitle.value, checked: false };
-    const addReq = todoStore.add(newItem);
-
-    addReq.onsuccess = () => {
-      todoList.value.push(newItem);
-      newTaskTitle.value = '';
-      console.log('Todo item updated successfully');
-    };
-
-    addReq.onerror = () => {
-      console.error('Error updating todo item');
-    };
-  };
+      await new Promise<void>((resolve, reject) => {
+        const addReq = todoStore.add(newItem);
+        addReq.onsuccess = () => {
+          todoList.value.push(newItem);
+          newTaskTitle.value = '';
+          console.log('Todo item added successfully');
+          resolve();
+        };
+        addReq.onerror = () => {
+          console.error('Error adding todo item');
+          reject(addReq.error);
+        };
+      });
+    }
+  } catch (error) {
+    console.error('Database error:', error);
+  }
 };
 
-onBeforeMount(() => {
-  const request = indexedDB.open('TodoList');
+onBeforeMount(async () => {
+  try {
+    const db = await openDB();
 
-  request.onsuccess = (event: Event) => {
-    dbOk.value = true;
+    if (db !== undefined) {
+      dbOk.value = true;
+      const transaction = db?.transaction('todos', 'readonly');
+      const todoStore = transaction.objectStore('todos');
 
-    const target = event.target as IDBOpenDBRequest;
-    const db = target.result;
-    const transaction = db.transaction('todos', 'readonly');
-
-    const todoStore = transaction.objectStore('todos');
-
-    const getAllReq = todoStore.getAll();
-    getAllReq.onsuccess = (e) => {
-      todoList.value = (e.target as IDBRequest).result;
-    };
-  };
-
-  request.onupgradeneeded = (event: Event) => {
-    const target = event.target as IDBOpenDBRequest;
-    const db = target.result;
-
-    if (!db.objectStoreNames.contains('todos')) {
-      const todoStore = db.createObjectStore('todos', { keyPath: 'id' });
-
-      todoStore.createIndex('title', 'title', { unique: false });
-      todoStore.createIndex('checked', 'checked', { unique: false });
-
-      const examples: Todo[] = [
-        { id: 1, title: 'Learn JavaScript', checked: false },
-        { id: 2, title: 'Learn Database', checked: false },
-        { id: 3, title: 'Learn DSA', checked: false },
-      ];
-
-      examples.forEach((todo) => {
-        todoStore.add(todo);
-      });
-
-      console.info('Object store and indexes created successfully');
+      const getAllReq = todoStore.getAll();
+      getAllReq.onsuccess = (e) => {
+        todoList.value = (e.target as IDBRequest).result;
+      };
     }
-  };
-
-  request.onerror = (event: Event) => {
-    console.error('Database error:', (event.target as IDBOpenDBRequest).error);
-  };
+  } catch (e) {
+    console.error(e);
+  }
 });
 </script>
 
