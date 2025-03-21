@@ -29,7 +29,7 @@ const handleUpdate = () => {
   <div class="list_item">
     <div :class="{ checked: isChecked }">
       <template v-if="isEditable">
-        <input type="text" v-model="newTitle" @blur="handleUpdate" @keyup.enter="handleUpdate" />
+        <input type="text" v-model="newTitle" @blur="handleUpdate" @keyup.enter="handleUpdate" autofocus />
       </template>
       <template v-else>
         <input type="checkbox" class="checkbox" @change="emit('check')" :checked="isChecked" />
